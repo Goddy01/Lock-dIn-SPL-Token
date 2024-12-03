@@ -13,40 +13,50 @@ declare_id!("6QFJhtyFrtYHVFbzDat9k6UshybzKih5d8rksRvbvQea");
 pub mod td3_spl_token {
     use super::*;
 
+    /// The function to initialize the token mint and its metadata.
+    ///
+    /// This function performs all necessary steps to create a token and
+    /// register its metadata with the Metaplex Token Metadata Program.
     pub fn initiate_token(_ctx: Context<InitToken>, metadata: InitTokenParams) -> Result<()> {
-        let seeds = &["mint".as_bytes(), &[_ctx.bumps.mint]];
-        let signer = [&seeds[..]];
+        // PDA seeds for the mint account
+        let seeds = &["mint".as_bytes(), &[_ctx.bumps.mint]]; // Derives PDA using seed "mint" and bump seed
+        let signer = [&seeds[..]]; // Wraps seeds in the required format for signers
 
+        // Define the token metadata structure
         let token_data: DataV2 = DataV2 {
-            name: metadata.name,
-            symbol: metadata.symbol,
-            uri: metadata.uri,
-            seller_fee_basis_points: 0,
-            creators: None,
-            collection: None,
-            uses: None,
+            name: metadata.name, // Name of the token (from params)
+            symbol: metadata.symbol, // Symbol of the token (from params)
+            uri: metadata.uri, // Metadata URI (from params)
+            seller_fee_basis_points: 0, // No royalty fees specified
+            creators: None, // No specific creators set
+            collection: None, // No collection linked
+            uses: None, // No usage constraints
         };
 
+        // Create the CPI (Cross-Program Invocation) context for creating metadata
         let metadata_ctx = CpiContext::new_with_signer(
-            _ctx.accounts.token_metadata_program.to_account_info(),
+            _ctx.accounts.token_metadata_program.to_account_info(), // Metadata program account
             CreateMetadataAccountsV3 {
-                payer: _ctx.accounts.payer.to_account_info(),
-                update_authority: _ctx.accounts.mint.to_account_info(),
-                mint: _ctx.accounts.mint.to_account_info(),
-                metadata: _ctx.accounts.metadata.to_account_info(),
-                mint_authority: _ctx.accounts.mint.to_account_info(),
-                system_program: _ctx.accounts.system_program.to_account_info(),
-                rent: _ctx.accounts.rent.to_account_info(),
+                payer: _ctx.accounts.payer.to_account_info(), // Payer funding the transaction
+                update_authority: _ctx.accounts.mint.to_account_info(), // Update authority set to mint
+                mint: _ctx.accounts.mint.to_account_info(), // Mint account
+                metadata: _ctx.accounts.metadata.to_account_info(), // Metadata account
+                mint_authority: _ctx.accounts.mint.to_account_info(), // Mint authority
+                system_program: _ctx.accounts.system_program.to_account_info(), // System program account
+                rent: _ctx.accounts.rent.to_account_info(), // Rent sysvar account
             },
-            &signer
-            );
+            &signer // Signer for the mint PDA
+        );
 
-            create_metadata_accounts_v3(metadata_ctx, token_data, false, true, None)?;
+        // Create the metadata account using the Metaplex program
+        create_metadata_accounts_v3(metadata_ctx, token_data, false, true, None)?;
 
-            msg!("Token mint created successfully!");
+        // Log success message
+        msg!("Token mint created successfully!");
 
-            Ok(())
+        Ok(()) // Return success
     }
+
 }
 
 #[derive(Accounts)]
