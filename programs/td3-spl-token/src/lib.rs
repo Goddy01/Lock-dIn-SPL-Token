@@ -57,6 +57,44 @@ pub mod td3_spl_token {
         Ok(()) // Return success
     }
 
+    pub fn mint_tokens(ctx: Context<MintTokens>, quantity: u64) -> Result<()> {
+        // Create the seeds used for deriving the address for the mint authority.
+        // The seeds are a combination of the "mint" string and the bump value from the context.
+        // These seeds help in deriving a unique, valid address for the mint account.
+        let seeds = &["mint".as_bytes(), &[ctx.bumps.mint]];
+        
+        // The signer is constructed by using the seeds. This will be used in the CPI to authorize the minting process.
+        let signer = [&seeds[..]];
+    
+        // Perform the minting operation using the `mint_to` CPI function from the Solana Token Program.
+        mint_to(
+            // Create a new CPI context with the necessary accounts and signer.
+            CpiContext::new_with_signer(
+                // The Solana token program account info. This is required to interact with the token program.
+                ctx.accounts.token_program.to_account_info(),
+                
+                // The MintTo struct defines the accounts involved in minting the tokens.
+                MintTo {
+                    // The authority that is allowed to mint the tokens. This is the mint account.
+                    authority: ctx.accounts.mint.to_account_info(),
+                    
+                    // The destination account where the minted tokens will be sent.
+                    to: ctx.accounts.destination.to_account_info(),
+                    
+                    // The mint account associated with the token type being minted.
+                    mint: ctx.accounts.mint.to_account_info(),
+                },
+                // The signer is passed to authorize the minting transaction.
+                &signer,
+            ),
+            // The quantity of tokens to mint is provided as an argument.
+            quantity
+        )?;
+    
+        // Return Ok to indicate that the operation was successful.
+        Ok(())
+    }
+    
 }
 
 #[derive(Accounts)]
