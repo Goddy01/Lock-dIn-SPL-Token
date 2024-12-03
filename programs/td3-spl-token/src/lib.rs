@@ -17,9 +17,9 @@ pub mod td3_spl_token {
     ///
     /// This function performs all necessary steps to create a token and
     /// register its metadata with the Metaplex Token Metadata Program.
-    pub fn initiate_token(_ctx: Context<InitToken>, metadata: InitTokenParams) -> Result<()> {
+    pub fn initiate_token(ctx: Context<InitToken>, metadata: InitTokenParams) -> Result<()> {
         // PDA seeds for the mint account
-        let seeds = &["mint".as_bytes(), &[_ctx.bumps.mint]]; // Derives PDA using seed "mint" and bump seed
+        let seeds = &["mint".as_bytes(), &[ctx.bumps.mint]]; // Derives PDA using seed "mint" and bump seed
         let signer = [&seeds[..]]; // Wraps seeds in the required format for signers
 
         // Define the token metadata structure
@@ -35,15 +35,15 @@ pub mod td3_spl_token {
 
         // Create the CPI (Cross-Program Invocation) context for creating metadata
         let metadata_ctx = CpiContext::new_with_signer(
-            _ctx.accounts.token_metadata_program.to_account_info(), // Metadata program account
+            ctx.accounts.token_metadata_program.to_account_info(), // Metadata program account
             CreateMetadataAccountsV3 {
-                payer: _ctx.accounts.payer.to_account_info(), // Payer funding the transaction
-                update_authority: _ctx.accounts.mint.to_account_info(), // Update authority set to mint
-                mint: _ctx.accounts.mint.to_account_info(), // Mint account
-                metadata: _ctx.accounts.metadata.to_account_info(), // Metadata account
-                mint_authority: _ctx.accounts.mint.to_account_info(), // Mint authority
-                system_program: _ctx.accounts.system_program.to_account_info(), // System program account
-                rent: _ctx.accounts.rent.to_account_info(), // Rent sysvar account
+                payer: ctx.accounts.payer.to_account_info(), // Payer funding the transaction
+                update_authority: ctx.accounts.mint.to_account_info(), // Update authority set to mint
+                mint: ctx.accounts.mint.to_account_info(), // Mint account
+                metadata: ctx.accounts.metadata.to_account_info(), // Metadata account
+                mint_authority: ctx.accounts.mint.to_account_info(), // Mint authority
+                system_program: ctx.accounts.system_program.to_account_info(), // System program account
+                rent: ctx.accounts.rent.to_account_info(), // Rent sysvar account
             },
             &signer // Signer for the mint PDA
         );
@@ -181,10 +181,10 @@ pub struct MintTokens<'info> {
 /// These parameters are passed by the client during the transaction.
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone)]
 pub struct InitTokenParams {
-    /// The name of the token (e.g., "MyToken").
+    /// The name of the token
     pub name: String,
 
-    /// The symbol of the token (e.g., "MTK").
+    /// The symbol of the token
     pub symbol: String,
 
     /// URI pointing to the token's metadata (e.g., JSON file with token details).

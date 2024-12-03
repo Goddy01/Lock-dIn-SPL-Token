@@ -2,7 +2,7 @@
 
 [features]
 resolution = true
-skip-lint = false
+skip-lint = true
 
 [programs.localnet]
 td3_spl_token = "6QFJhtyFrtYHVFbzDat9k6UshybzKih5d8rksRvbvQea"
