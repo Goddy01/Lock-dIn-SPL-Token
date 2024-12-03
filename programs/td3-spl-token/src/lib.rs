@@ -24,13 +24,13 @@ pub mod td3_spl_token {
 
         // Define the token metadata structure
         let token_data: DataV2 = DataV2 {
-            name: metadata.name, // Name of the token (from params)
-            symbol: metadata.symbol, // Symbol of the token (from params)
-            uri: metadata.uri, // Metadata URI (from params)
+            name: metadata.name,        // Name of the token (from params)
+            symbol: metadata.symbol,    // Symbol of the token (from params)
+            uri: metadata.uri,          // Metadata URI (from params)
             seller_fee_basis_points: 0, // No royalty fees specified
-            creators: None, // No specific creators set
-            collection: None, // No collection linked
-            uses: None, // No usage constraints
+            creators: None,             // No specific creators set
+            collection: None,           // No collection linked
+            uses: None,                 // No usage constraints
         };
 
         // Create the CPI (Cross-Program Invocation) context for creating metadata
@@ -39,13 +39,13 @@ pub mod td3_spl_token {
             CreateMetadataAccountsV3 {
                 payer: ctx.accounts.payer.to_account_info(), // Payer funding the transaction
                 update_authority: ctx.accounts.mint.to_account_info(), // Update authority set to mint
-                mint: ctx.accounts.mint.to_account_info(), // Mint account
-                metadata: ctx.accounts.metadata.to_account_info(), // Metadata account
-                mint_authority: ctx.accounts.mint.to_account_info(), // Mint authority
+                mint: ctx.accounts.mint.to_account_info(),             // Mint account
+                metadata: ctx.accounts.metadata.to_account_info(),     // Metadata account
+                mint_authority: ctx.accounts.mint.to_account_info(),   // Mint authority
                 system_program: ctx.accounts.system_program.to_account_info(), // System program account
                 rent: ctx.accounts.rent.to_account_info(), // Rent sysvar account
             },
-            &signer // Signer for the mint PDA
+            &signer, // Signer for the mint PDA
         );
 
         // Create the metadata account using the Metaplex program
@@ -62,25 +62,24 @@ pub mod td3_spl_token {
         // The seeds are a combination of the "mint" string and the bump value from the context.
         // These seeds help in deriving a unique, valid address for the mint account.
         let seeds = &["mint".as_bytes(), &[ctx.bumps.mint]];
-        
+
         // The signer is constructed by using the seeds. This will be used in the CPI to authorize the minting process.
         let signer = [&seeds[..]];
-    
+
         // Perform the minting operation using the `mint_to` CPI function from the Solana Token Program.
         mint_to(
             // Create a new CPI context with the necessary accounts and signer.
             CpiContext::new_with_signer(
                 // The Solana token program account info. This is required to interact with the token program.
                 ctx.accounts.token_program.to_account_info(),
-                
                 // The MintTo struct defines the accounts involved in minting the tokens.
                 MintTo {
                     // The authority that is allowed to mint the tokens. This is the mint account.
                     authority: ctx.accounts.mint.to_account_info(),
-                    
+
                     // The destination account where the minted tokens will be sent.
                     to: ctx.accounts.destination.to_account_info(),
-                    
+
                     // The mint account associated with the token type being minted.
                     mint: ctx.accounts.mint.to_account_info(),
                 },
@@ -88,19 +87,18 @@ pub mod td3_spl_token {
                 &signer,
             ),
             // The quantity of tokens to mint is provided as an argument.
-            quantity
+            quantity,
         )?;
-    
+
         // Return Ok to indicate that the operation was successful.
         Ok(())
     }
-    
 }
 
 #[derive(Accounts)]
 pub struct Initialize {}
 
- /// Instruction to initialize a new token mint and its metadata.
+/// Instruction to initialize a new token mint and its metadata.
 ///
 /// The `#[instruction(params: InitTokenParams)]` directive ensures
 /// that the `params` are passed alongside the instruction call.
@@ -143,7 +141,7 @@ pub struct InitToken<'info> {
     pub token_metadata_program: Program<'info, Metaplex>,
 }
 
-#[derive(Accounts)]  // This macro is used to define the accounts required for the operation
+#[derive(Accounts)] // This macro is used to define the accounts required for the operation
 pub struct MintTokens<'info> {
     // The `mint` account represents the mint that will be used to create the tokens.
     #[account(
@@ -163,18 +161,17 @@ pub struct MintTokens<'info> {
     )]
     pub destination: Account<'info, TokenAccount>,
 
-    #[account(mut)]  // This means the `payer` account will be modified during the transaction.
-    pub payer: Signer<'info>,  // The `Signer` trait indicates this account(payer) must sign the transaction.
+    #[account(mut)] // This means the `payer` account will be modified during the transaction.
+    pub payer: Signer<'info>, // The `Signer` trait indicates this account(payer) must sign the transaction.
 
-    pub rent: Sysvar<'info, Rent>,  // This provides access to the rent sysvar, which is used to determine if accounts are rent-exempt.
+    pub rent: Sysvar<'info, Rent>, // This provides access to the rent sysvar, which is used to determine if accounts are rent-exempt.
 
-    pub system_program: Program<'info, System>,  // This is required for managing basic accounts in Solana.
+    pub system_program: Program<'info, System>, // This is required for managing basic accounts in Solana.
 
-    pub token_program: Program<'info, Token>,  // This program is needed to manage SPL tokens.
+    pub token_program: Program<'info, Token>, // This program is needed to manage SPL tokens.
 
-    pub associated_token_program: Program<'info, AssociatedToken>,  // This program is required to work with associated token accounts.
+    pub associated_token_program: Program<'info, AssociatedToken>, // This program is required to work with associated token accounts.
 }
-
 
 /// Parameters for the `InitToken` instruction.
 ///
