@@ -11,7 +11,7 @@ td3_spl_token = "6QFJhtyFrtYHVFbzDat9k6UshybzKih5d8rksRvbvQea"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
