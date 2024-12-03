@@ -105,6 +105,39 @@ pub struct InitToken<'info> {
     pub token_metadata_program: Program<'info, Metaplex>,
 }
 
+#[derive(Accounts)]  // This macro is used to define the accounts required for the operation
+pub struct MintTokens<'info> {
+    // The `mint` account represents the mint that will be used to create the tokens.
+    #[account(
+        mut,  // This means the `mint` account will be modified during the transaction.
+        seeds = [b"mint"],  // This defines the seed to find the mint's address.
+        bump,  // The `bump` ensures the mint's address is valid (part of address derivation in Solana).
+        mint::authority = mint  // The mint's authority must match the `mint` account.
+    )]
+    pub mint: Account<'info, Mint>,
+
+    // The `destination` account represents the user's token account where minted tokens will go.
+    #[account(
+        init_if_needed,  // Initialize the `destination` account only if it doesn't exist yet.
+        payer = payer,  // The `payer` will cover the fees for creating the `destination` account.
+        associated_token::mint = mint,  // This associates the `destination` account with the `mint` account.
+        associated_token::authority = payer,  // The `payer` must have authority over the `destination` account.
+    )]
+    pub destination: Account<'info, TokenAccount>,
+
+    #[account(mut)]  // This means the `payer` account will be modified during the transaction.
+    pub payer: Signer<'info>,  // The `Signer` trait indicates this account(payer) must sign the transaction.
+
+    pub rent: Sysvar<'info, Rent>,  // This provides access to the rent sysvar, which is used to determine if accounts are rent-exempt.
+
+    pub system_program: Program<'info, System>,  // This is required for managing basic accounts in Solana.
+
+    pub token_program: Program<'info, Token>,  // This program is needed to manage SPL tokens.
+
+    pub associated_token_program: Program<'info, AssociatedToken>,  // This program is required to work with associated token accounts.
+}
+
+
 /// Parameters for the `InitToken` instruction.
 ///
 /// These parameters are passed by the client during the transaction.
