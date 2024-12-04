@@ -1,112 +1,134 @@
-import * as anchor from "@coral-xyz/anchor";
-import assert from "assert";
-import { Program } from "@coral-xyz/anchor";
-import { Td3SplToken } from "../target/types/td3_spl_token";
-import * as web3 from "@solana/web3.js";
-import BN from "bn.js";
-import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
+// Import necessary libraries and dependencies
+import * as anchor from "@coral-xyz/anchor"; // Anchor framework for Solana development
+import assert from "assert"; // Assertion library for testing
+import { Td3SplToken } from "../target/types/td3_spl_token"; // Type definition for the Anchor program
+import * as web3 from "@solana/web3.js"; // Web3 utilities for Solana
+import BN from "bn.js"; // BigNumber library for handling large integers
 
+// Define the test suite
 describe("SPL Token Test", () => {
-  // Configure the client to use the local cluster.
-  anchor.setProvider(anchor.AnchorProvider.env());
+  // Configure the Anchor client to use the local cluster
+  anchor.setProvider(anchor.AnchorProvider.env()); // Use the environment's Solana cluster configuration
 
+  // Load the program from the workspace
   const program = anchor.workspace.Td3SplToken as anchor.Program<Td3SplToken>;
 
-  const METADATA = "metadata";
+  // Constants for token metadata and addresses
+  const METADATA_SEED = "metadata"; // Seed for metadata address derivation
   const TOKEN_METADATA_PROGRAM_ID = new web3.PublicKey(
-    "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
-  )
-  const MINT_SEED = "mint";
-  const payer = program.provider.publicKey;
-  const metadata = {
-    name: "Lock Da Fuck In",
-    symbol: "LDFI",
-    uri: "https://github.com/Goddy01/toshDa3rd-Token-Metadata/blob/main/metadata.json",
-    decimal: 9,
-  }
-  const mintAmount = 10;
-  const [mint] = web3.PublicKey.findProgramAddressSync(
-    [Buffer.from(MINT_SEED)],
-    program.programId
-  )
+    "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s" // Token metadata program public key
+  );
+  const MINT_SEED = "mint"; // Seed for mint address derivation
 
-  const [metadataAddress] = web3.PublicKey.findProgramAddressSync(
-    [Buffer.from(METADATA),
-    TOKEN_METADATA_PROGRAM_ID.toBuffer(),
-    mint.toBuffer()],
-    TOKEN_METADATA_PROGRAM_ID
+  // The public key of the payer (creator of the token)
+  const payer = program.provider.publicKey;
+
+  // Metadata for the SPL token
+  const metadata = {
+    name: "Lock Da Fuck In", // Token name
+    symbol: "LDFI", // Token symbol
+    uri: "https://github.com/Goddy01/toshDa3rd-Token-Metadata/blob/main/metadata.json", // Metadata JSON URI
+    decimals: 9, // Token decimal places
+  };
+
+  const mintAmount = 10; // Number of tokens to mint
+
+  // Derive the mint address using the program ID and seed
+  const [mint] = web3.PublicKey.findProgramAddressSync(
+    [Buffer.from(MINT_SEED)], // Seed buffer
+    program.programId // Program ID
   );
 
-  it("Initialize", async () => {
+  // Derive the metadata address using its program ID, seed, and mint address
+  const [metadataAddress] = web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from(METADATA_SEED), // Metadata seed buffer
+      TOKEN_METADATA_PROGRAM_ID.toBuffer(), // Token metadata program public key
+      mint.toBuffer(), // Mint address buffer
+    ],
+    TOKEN_METADATA_PROGRAM_ID // Token metadata program ID
+  );
+
+  // Test case for initializing the token
+  it("Initiate Token", async () => {
+    // Check if the mint account already exists
     const info = await program.provider.connection.getAccountInfo(mint);
     if (info) {
-      return; // Do not attempt to initialize ifalready initialized
+      return; // Skip initialization if the mint already exists
     }
-    console.log("  Mint not found. Initializing program....")
+    console.log("  Mint not found. Initializing program....");
 
+    // Context for initializing the token
     const context = {
-      metadata: metadataAddress,
-      mint,
-      payer,
-      rent: web3.SYSVAR_RENT_PUBKEY,
-      systemProgram: web3.SystemProgram.programId,
-      tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
-      tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID
+      metadata: metadataAddress, // Metadata account
+      mint, // Mint account
+      payer, // Payer public key
+      rent: web3.SYSVAR_RENT_PUBKEY, // Rent system variable account
+      systemProgram: web3.SystemProgram.programId, // System program ID
+      tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID, // Token program ID
+      tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID, // Token metadata program ID
     };
 
-    const txHash = await program.methods
-      .initiateToken(metadata).accounts(context).rpc();
+    // Call the `initiateToken` method on the program
+    const txHash = await program.methods.initiateToken(metadata).accounts(context).rpc();
 
-    await program.provider.connection.confirmTransaction(txHash, "finalized") {
-      console.log(`https://explorer.solana.com/tx/${txHash}?cluster=devnet`);
-      const newInfo = await program.provider.connection.getAccountInfo(mint);
-      assert(newInfo, " Mint should be initialized");
-    }
+    // Confirm the transaction
+    await program.provider.connection.confirmTransaction(txHash, "finalized");
+    console.log(`https://explorer.solana.com/tx/${txHash}?cluster=devnet`);
+
+    // Verify that the mint account is now initialized
+    const newInfo = await program.provider.connection.getAccountInfo(mint);
+    assert(newInfo, " Mint should be initialized");
   });
 
-  it('Mint Token', async () => {
+  // Test case for minting tokens
+  it("Mint Tokens", async () => {
+    // Derive the associated token account for the payer
     const destination = await anchor.utils.token.associatedAddress({
-      mint: mint,
-      owner: payer
-    })
+      mint: mint, // Mint address
+      owner: payer, // Owner's public key
+    });
 
     let initialBalance: number;
 
+    // Fetch the initial balance of the associated token account
     try {
-      const balance = await program.provider.connection.getTokenAccountBalance(destination)
+      const balance = await program.provider.connection.getTokenAccountBalance(destination);
       initialBalance = balance.value.uiAmount;
-    }
-    catch {
-      // Token balance not yet initiated, has 0 balance
+    } catch {
+      // If the account doesn't exist, set the balance to 0
       initialBalance = 0;
     }
 
+    // Context for minting tokens
     const context = {
-      mint,
-      destination,
-      payer,
-      rent: web3.SYSVAR_RENT_PUBKEY,
-      systemProgram: web3.SystemProgram.programId,
-      tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
-      associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
+      mint, // Mint account
+      destination, // Associated token account
+      payer, // Payer public key
+      rent: web3.SYSVAR_RENT_PUBKEY, // Rent system variable account
+      systemProgram: web3.SystemProgram.programId, // System program ID
+      tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID, // Token program ID
+      associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID, // Associated token program ID
     };
 
+    // Call the `mintTokens` method on the program with the mint amount
     const txHash = await program.methods
-      .mintTokens(new BN(mintAmount * 10 ** metadata.decimal))
+      .mintTokens(new BN(mintAmount * 10 ** metadata.decimals)) // Convert to smallest unit using decimals
       .accounts(context)
       .rpc();
 
+    // Confirm the transaction
     await program.provider.connection.confirmTransaction(txHash);
-    console.log(`  https://explorer.solana.com/tx/${txHash}?cluster=devnet`)
+    console.log(`  https://explorer.solana.com/tx/${txHash}?cluster=devnet`);
 
+    // Fetch the post-mint balance and assert correctness
     const postBalance = (
-      (await program.provider.connection.getTokenAccountBalance(destination))
+      await program.provider.connection.getTokenAccountBalance(destination)
     ).value.uiAmount;
     assert.equal(
-      initialBalance + mintAmount,
-      postBalance,
-      "Post balance should equal intial plus mint amount"
-    )
+      initialBalance + mintAmount, // Expected balance
+      postBalance, // Actual balance
+      "Post balance should equal initial plus mint amount"
+    );
   });
-
 });

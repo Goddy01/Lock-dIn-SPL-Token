@@ -17,7 +17,7 @@ pub mod td3_spl_token {
     ///
     /// This function performs all necessary steps to create a token and
     /// register its metadata with the Metaplex Token Metadata Program.
-    pub fn initiate_token(ctx: Context<InitToken>, metadata: InitTokenParams) -> Result<()> {
+    pub fn initiate_token(ctx: Context<InitiateToken>, metadata: InitTokenParams) -> Result<()> {
         // PDA seeds for the mint account
         let seeds = &["mint".as_bytes(), &[ctx.bumps.mint]]; // Derives PDA using seed "mint" and bump seed
         let signer = [&seeds[..]]; // Wraps seeds in the required format for signers
@@ -104,7 +104,7 @@ pub struct Initialize {}
 /// that the `params` are passed alongside the instruction call.
 #[derive(Accounts)]
 #[instruction(params: InitTokenParams)]
-pub struct InitToken<'info> {
+pub struct InitiateToken<'info> {
     /// The metadata account for the token.
     /// Using `UncheckedAccount` because metadata management is often handled
     /// by the Metaplex Token Metadata Program, which may not enforce Anchor constraints.
@@ -115,11 +115,11 @@ pub struct InitToken<'info> {
     /// This account is derived programmatically using a PDA (Program Derived Address).
     #[account(
         init, // This attribute initializes the mint account.
-        seeds = [b"mint"], // Seed to derive the PDA for the mint account.
+        seeds = [b"mint", ], // Seed to derive the PDA for the mint account.
         bump, // Auto-calculates the bump seed for PDA derivation.
         payer = payer, // Specifies the payer account funding the creation.
         mint::decimals = params.decimals, // Sets the token's precision (number of decimals).
-        mint::authority = payer.key(), // Specifies the authority of the mint (payer in this case).
+        mint::authority = mint, // Specifies the authority of the mint (mint in this case).
     )]
     pub mint: Account<'info, Mint>,
 
@@ -184,7 +184,7 @@ pub struct InitTokenParams {
     /// The symbol of the token
     pub symbol: String,
 
-    /// URI pointing to the token's metadata (e.g., JSON file with token details).
+    /// URI pointing to the token's metadata
     pub uri: String,
 
     /// The number of decimal places for the token.
