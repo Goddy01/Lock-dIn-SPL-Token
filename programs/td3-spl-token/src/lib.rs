@@ -49,7 +49,7 @@ pub mod td3_spl_token {
         );
 
         // Create the metadata account using the Metaplex program
-        create_metadata_accounts_v3(metadata_ctx, token_data, false, true, None)?;
+        create_metadata_accounts_v3(metadata_ctx, token_data, true, true, None)?;
 
         // Log success message
         msg!("Token mint created successfully!");
@@ -94,10 +94,6 @@ pub mod td3_spl_token {
         Ok(())
     }
 }
-
-#[derive(Accounts)]
-pub struct Initialize {}
-
 /// Instruction to initialize a new token mint and its metadata.
 ///
 /// The `#[instruction(params: InitTokenParams)]` directive ensures
@@ -115,7 +111,7 @@ pub struct InitiateToken<'info> {
     /// This account is derived programmatically using a PDA (Program Derived Address).
     #[account(
         init, // This attribute initializes the mint account.
-        seeds = [b"mint", ], // Seed to derive the PDA for the mint account.
+        seeds = [b"mint"], // Seed to derive the PDA for the mint account.
         bump, // Auto-calculates the bump seed for PDA derivation.
         payer = payer, // Specifies the payer account funding the creation.
         mint::decimals = params.decimals, // Sets the token's precision (number of decimals).
@@ -190,3 +186,5 @@ pub struct InitTokenParams {
     /// The number of decimal places for the token.
     pub decimals: u8,
 }
+
+pub struct Initialize {}

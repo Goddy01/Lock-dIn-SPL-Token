@@ -27,7 +27,7 @@ describe("SPL Token Test", () => {
   const metadata = {
     name: "Lock Da Fuck In", // Token name
     symbol: "LDFI", // Token symbol
-    uri: "https://github.com/Goddy01/toshDa3rd-Token-Metadata/blob/main/metadata.json", // Metadata JSON URI
+    uri: "https://purple-cheap-bobcat-47.mypinata.cloud/ipfs/QmaKgNN99tr4RzVjnBypv7fU9BvR4KeWwqJKzT7tBmLfsE", // Metadata JSON URI
     decimals: 9, // Token decimal places
   };
 
